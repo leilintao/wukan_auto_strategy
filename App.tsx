@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Settings, HelpCircle, ChevronRight, Play, Download, Copy, FileText, BarChart3, Check, Printer } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, HelpCircle, ChevronRight, Play, FileText, BarChart3, Check, Printer } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import SettingsModal from './components/SettingsModal';
 import HelpModal from './components/HelpModal';
@@ -13,6 +13,29 @@ enum Step {
   RESULT = 2
 }
 
+// --- FIXED: InputGroup moved OUTSIDE of the App component ---
+interface InputGroupProps {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  placeholder: string;
+  half?: boolean;
+}
+
+const InputGroup: React.FC<InputGroupProps> = ({ label, value, onChange, placeholder, half = false }) => (
+  <div className={`${half ? 'col-span-1' : 'col-span-2'}`}>
+    <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+    <input 
+      type="text" 
+      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-shadow"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  </div>
+);
+// -----------------------------------------------------------
+
 export default function App() {
   // State
   const [step, setStep] = useState<Step>(Step.INPUT);
@@ -22,8 +45,22 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
-  const [config, setConfig] = useState<AIConfig>(DEFAULT_CONFIG);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Load config from localStorage or default
+  const [config, setConfig] = useState<AIConfig>(() => {
+    try {
+      const saved = localStorage.getItem('wukan_ai_config');
+      return saved ? JSON.parse(saved) : DEFAULT_CONFIG;
+    } catch (e) {
+      return DEFAULT_CONFIG;
+    }
+  });
+
+  // Save config to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('wukan_ai_config', JSON.stringify(config));
+  }, [config]);
 
   // Scroll to top on step change
   useEffect(() => {
@@ -74,20 +111,6 @@ export default function App() {
   const updateForm = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
-  // Render Input Field Helper
-  const InputGroup = ({ label, field, placeholder, half = false }: { label: string, field: keyof FormData, placeholder: string, half?: boolean }) => (
-    <div className={`${half ? 'col-span-1' : 'col-span-2'}`}>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      <input 
-        type="text" 
-        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-shadow"
-        placeholder={placeholder}
-        value={formData[field]}
-        onChange={(e) => updateForm(field, e.target.value)}
-      />
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -161,23 +184,91 @@ export default function App() {
               </div>
               
               <div className="grid grid-cols-2 gap-6">
-                <InputGroup label="产品名称 (含年款)" field="productName" placeholder="例如：广汽传祺向往S7 (2025款)" />
-                <InputGroup label="产品类型/定位" field="productType" placeholder="例如：B/C级大五座新能源SUV" half />
-                <InputGroup label="市场细分" field="marketSegment" placeholder="例如：15-30万家用SUV" half />
+                <InputGroup 
+                  label="产品名称 (含年款)" 
+                  value={formData.productName}
+                  onChange={(v) => updateForm('productName', v)}
+                  placeholder="例如：广汽传祺向往S7 (2025款)" 
+                />
+                <InputGroup 
+                  label="产品类型/定位" 
+                  value={formData.productType}
+                  onChange={(v) => updateForm('productType', v)}
+                  placeholder="例如：B/C级大五座新能源SUV" 
+                  half 
+                />
+                <InputGroup 
+                  label="市场细分" 
+                  value={formData.marketSegment}
+                  onChange={(v) => updateForm('marketSegment', v)}
+                  placeholder="例如：15-30万家用SUV" 
+                  half 
+                />
                 
-                <InputGroup label="官方指导价范围" field="priceRange" placeholder="16.98万-22.38万" half />
-                <InputGroup label="当前终端有效价格" field="actualPrice" placeholder="15.98万" half />
+                <InputGroup 
+                  label="官方指导价范围" 
+                  value={formData.priceRange}
+                  onChange={(v) => updateForm('priceRange', v)}
+                  placeholder="16.98万-22.38万" 
+                  half 
+                />
+                <InputGroup 
+                  label="当前终端有效价格" 
+                  value={formData.actualPrice}
+                  onChange={(v) => updateForm('actualPrice', v)}
+                  placeholder="15.98万" 
+                  half 
+                />
                 
-                <InputGroup label="市场投放日期" field="launchDate" placeholder="2025年3月" half />
-                <InputGroup label="数据截止日期" field="dataCutoff" placeholder="2025年11月" half />
+                <InputGroup 
+                  label="市场投放日期" 
+                  value={formData.launchDate}
+                  onChange={(v) => updateForm('launchDate', v)}
+                  placeholder="2025年3月" 
+                  half 
+                />
+                <InputGroup 
+                  label="数据截止日期" 
+                  value={formData.dataCutoff}
+                  onChange={(v) => updateForm('dataCutoff', v)}
+                  placeholder="2025年11月" 
+                  half 
+                />
                 
-                <InputGroup label="期望月销量目标" field="salesTarget" placeholder="8000台/月" />
-                <InputGroup label="核心卖点 (KSP)" field="coreSellingPoints" placeholder="例如：高阶智驾(Momenta), 骁龙8295座舱..." />
+                <InputGroup 
+                  label="期望月销量目标" 
+                  value={formData.salesTarget}
+                  onChange={(v) => updateForm('salesTarget', v)}
+                  placeholder="8000台/月" 
+                />
+                <InputGroup 
+                  label="核心卖点 (KSP)" 
+                  value={formData.coreSellingPoints}
+                  onChange={(v) => updateForm('coreSellingPoints', v)}
+                  placeholder="例如：高阶智驾(Momenta), 骁龙8295座舱..." 
+                />
                 
-                <InputGroup label="智能座舱系统" field="cockpitSystem" placeholder="例如：广汽ADiGO智能座舱" half />
-                <InputGroup label="智能驾驶系统" field="smartDrivingSystem" placeholder="例如：Momenta 高阶智驾方案" half />
+                <InputGroup 
+                  label="智能座舱系统" 
+                  value={formData.cockpitSystem}
+                  onChange={(v) => updateForm('cockpitSystem', v)}
+                  placeholder="例如：广汽ADiGO智能座舱" 
+                  half 
+                />
+                <InputGroup 
+                  label="智能驾驶系统" 
+                  value={formData.smartDrivingSystem}
+                  onChange={(v) => updateForm('smartDrivingSystem', v)}
+                  placeholder="例如：Momenta 高阶智驾方案" 
+                  half 
+                />
                 
-                <InputGroup label="能源形式约束" field="energyType" placeholder="PHEV / EREV / EV" />
+                <InputGroup 
+                  label="能源形式约束" 
+                  value={formData.energyType}
+                  onChange={(v) => updateForm('energyType', v)}
+                  placeholder="PHEV / EREV / EV" 
+                />
               </div>
             </div>
 
@@ -191,17 +282,65 @@ export default function App() {
               </div>
               
               <div className="grid grid-cols-2 gap-6">
-                <InputGroup label="核心对标竞品 1 (最渴望的对手)" field="comp1" placeholder="例如：理想L6" half />
-                <InputGroup label="核心对标竞品 2" field="comp2" placeholder="例如：尚界H5" half />
+                <InputGroup 
+                  label="核心对标竞品 1 (最渴望的对手)" 
+                  value={formData.comp1}
+                  onChange={(v) => updateForm('comp1', v)}
+                  placeholder="例如：理想L6" 
+                  half 
+                />
+                <InputGroup 
+                  label="核心对标竞品 2" 
+                  value={formData.comp2}
+                  onChange={(v) => updateForm('comp2', v)}
+                  placeholder="例如：尚界H5" 
+                  half 
+                />
                 
-                <InputGroup label="价格重叠竞品 1" field="priceComp1" placeholder="例如：比亚迪唐DM-i" half />
-                <InputGroup label="价格重叠竞品 2" field="priceComp2" placeholder="例如：零跑C16" half />
+                <InputGroup 
+                  label="价格重叠竞品 1" 
+                  value={formData.priceComp1}
+                  onChange={(v) => updateForm('priceComp1', v)}
+                  placeholder="例如：比亚迪唐DM-i" 
+                  half 
+                />
+                <InputGroup 
+                  label="价格重叠竞品 2" 
+                  value={formData.priceComp2}
+                  onChange={(v) => updateForm('priceComp2', v)}
+                  placeholder="例如：零跑C16" 
+                  half 
+                />
                 
-                <InputGroup label="价格重叠竞品 3" field="priceOverlap1" placeholder="例如：启源 Q07" half />
-                <InputGroup label="价格重叠竞品 4" field="priceOverlap2" placeholder="例如：比亚迪宋L DM-i" half />
+                <InputGroup 
+                  label="价格重叠竞品 3" 
+                  value={formData.priceOverlap1}
+                  onChange={(v) => updateForm('priceOverlap1', v)}
+                  placeholder="例如：启源 Q07" 
+                  half 
+                />
+                <InputGroup 
+                  label="价格重叠竞品 4" 
+                  value={formData.priceOverlap2}
+                  onChange={(v) => updateForm('priceOverlap2', v)}
+                  placeholder="例如：比亚迪宋L DM-i" 
+                  half 
+                />
                 
-                <InputGroup label="高价位标杆 1" field="highPrice1" placeholder="例如：理想L7" half />
-                <InputGroup label="高价位标杆 2" field="highPrice2" placeholder="例如：问界M7" half />
+                <InputGroup 
+                  label="高价位标杆 1" 
+                  value={formData.highPrice1}
+                  onChange={(v) => updateForm('highPrice1', v)}
+                  placeholder="例如：理想L7" 
+                  half 
+                />
+                <InputGroup 
+                  label="高价位标杆 2" 
+                  value={formData.highPrice2}
+                  onChange={(v) => updateForm('highPrice2', v)}
+                  placeholder="例如：问界M7" 
+                  half 
+                />
               </div>
             </div>
           </div>
