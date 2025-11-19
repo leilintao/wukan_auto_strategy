@@ -1,5 +1,5 @@
 import React from 'react';
-import { HelpCircle, X, ExternalLink, CheckCircle, Share2 } from 'lucide-react';
+import { HelpCircle, X, ExternalLink, Settings } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -31,14 +31,14 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center flex-shrink-0 font-bold">1</div>
                 <div>
                   <p className="font-medium text-slate-900">数据录入</p>
-                  <p className="text-sm">在「信息录入」页面填写产品的基础信息和竞争对手信息。未填写的字段将默认为"暂无"。</p>
+                  <p className="text-sm">在「信息录入」页面填写产品的基础信息和竞争对手信息。未填写的字段将默认为空。</p>
                 </div>
               </div>
               <div className="flex gap-4 items-start">
                 <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center flex-shrink-0 font-bold">2</div>
                 <div>
                   <p className="font-medium text-slate-900">提示词确认</p>
-                  <p className="text-sm">系统会自动生成专业的战略分析提示词。您可以在此步骤手动微调，然后点击"提交 AI 分析"。</p>
+                  <p className="text-sm">系统会自动生成专业的战略分析提示词。您可以在此步骤查看预览，或点击“编辑”手动微调。</p>
                 </div>
               </div>
               <div className="flex gap-4 items-start">
@@ -48,23 +48,6 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   <p className="text-sm">AI 生成报告后，点击底部的 <span className="font-bold text-slate-800">"导出 PDF"</span> 按钮。系统会生成一份排版整洁的文档，可直接发送给管理层或同事。</p>
                 </div>
               </div>
-            </div>
-          </section>
-
-          <div className="h-px bg-slate-200 my-2"></div>
-
-          <section>
-            <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-               <Share2 className="w-5 h-5 text-brand-600" />
-               如何将此工具分享给同事？
-            </h3>
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-3 text-sm text-blue-800">
-              <p>本工具是一个 Web 应用程序。若要让同事使用：</p>
-              <ol className="list-decimal list-inside space-y-2 ml-2">
-                <li><span className="font-semibold">部署链接：</span> 如果IT部门已将此应用部署，直接发送网址（URL）给同事即可。</li>
-                <li><span className="font-semibold">本地运行：</span> 如果是源代码形式，同事需要安装 Node.js 环境并在终端运行 <code>npm start</code>。</li>
-                <li><span className="font-semibold">交付成果而非工具：</span> 推荐您自己使用工具生成 PDF 报告，然后直接将 <strong>PDF</strong> 发送给同事，这是最最高效的交付方式。</li>
-              </ol>
             </div>
           </section>
 
@@ -85,7 +68,9 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   <strong>Base URL:</strong> 默认为 <code>https://dashscope.aliyuncs.com/compatible-mode/v1</code>
                 </li>
                 <li>
-                  <strong>Model:</strong> 推荐使用 <code>qwen-plus</code> 或 <code>qwen-max</code> 以获得最佳的逻辑推理能力。
+                  <strong>Model (重要):</strong> 强烈推荐使用 <code>qwen-max</code> 或 <code>qwen-plus</code>。
+                  <br/>
+                  <span className="text-slate-500 ml-5 text-xs">这些模型在后台默认具备更强的推理能力，无需额外开启“深度思考”开关。</span>
                 </li>
               </ul>
             </div>
@@ -104,4 +89,3 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
 };
 
 export default HelpModal;
-function Settings(props: any) { return null; }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, HelpCircle, ChevronRight, Play, FileText, BarChart3, Check, Printer } from 'lucide-react';
+import { Settings, HelpCircle, ChevronRight, Play, FileText, BarChart3, Check, Printer, Edit3, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import SettingsModal from './components/SettingsModal';
 import HelpModal from './components/HelpModal';
 import { FormData, INITIAL_FORM_DATA, AIConfig, DEFAULT_CONFIG } from './types';
@@ -13,7 +14,7 @@ enum Step {
   RESULT = 2
 }
 
-// --- FIXED: InputGroup moved OUTSIDE of the App component ---
+// --- InputGroup moved OUTSIDE of the App component ---
 interface InputGroupProps {
   label: string;
   value: string;
@@ -41,6 +42,7 @@ export default function App() {
   const [step, setStep] = useState<Step>(Step.INPUT);
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
   const [promptText, setPromptText] = useState<string>('');
+  const [isEditingPrompt, setIsEditingPrompt] = useState<boolean>(false); // New toggle state
   const [analysisResult, setAnalysisResult] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -72,6 +74,7 @@ export default function App() {
     const generated = generateStrategyPrompt(formData);
     setPromptText(generated);
     setStep(Step.PREVIEW);
+    setIsEditingPrompt(false); // Reset to view mode
   };
 
   // Handle AI Execution
@@ -114,6 +117,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30 no-print">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -188,20 +192,20 @@ export default function App() {
                   label="产品名称 (含年款)" 
                   value={formData.productName}
                   onChange={(v) => updateForm('productName', v)}
-                  placeholder="例如：广汽传祺向往S7 (2025款)" 
+                  placeholder="本品的全名（含年款）。" 
                 />
                 <InputGroup 
                   label="产品类型/定位" 
                   value={formData.productType}
                   onChange={(v) => updateForm('productType', v)}
-                  placeholder="例如：B/C级大五座新能源SUV" 
+                  placeholder="细分市场/定位。" 
                   half 
                 />
                 <InputGroup 
-                  label="市场细分" 
+                  label="市场价格区间 (Market Segment)" 
                   value={formData.marketSegment}
                   onChange={(v) => updateForm('marketSegment', v)}
-                  placeholder="例如：15-30万家用SUV" 
+                  placeholder="市场分析所关注的价格范围。" 
                   half 
                 />
                 
@@ -209,14 +213,14 @@ export default function App() {
                   label="官方指导价范围" 
                   value={formData.priceRange}
                   onChange={(v) => updateForm('priceRange', v)}
-                  placeholder="16.98万-22.38万" 
+                  placeholder="官方上市指导价范围。" 
                   half 
                 />
                 <InputGroup 
                   label="当前终端有效价格" 
                   value={formData.actualPrice}
                   onChange={(v) => updateForm('actualPrice', v)}
-                  placeholder="15.98万" 
+                  placeholder="当前终端有效/优惠后价格。" 
                   half 
                 />
                 
@@ -224,14 +228,14 @@ export default function App() {
                   label="市场投放日期" 
                   value={formData.launchDate}
                   onChange={(v) => updateForm('launchDate', v)}
-                  placeholder="2025年3月" 
+                  placeholder="市场投放日期。" 
                   half 
                 />
                 <InputGroup 
                   label="数据截止日期" 
                   value={formData.dataCutoff}
                   onChange={(v) => updateForm('dataCutoff', v)}
-                  placeholder="2025年11月" 
+                  placeholder="本次分析的“当前日期”。" 
                   half 
                 />
                 
@@ -239,27 +243,27 @@ export default function App() {
                   label="期望月销量目标" 
                   value={formData.salesTarget}
                   onChange={(v) => updateForm('salesTarget', v)}
-                  placeholder="8000台/月" 
+                  placeholder="期望的月度稳定销量目标。" 
                 />
                 <InputGroup 
                   label="核心卖点 (KSP)" 
                   value={formData.coreSellingPoints}
                   onChange={(v) => updateForm('coreSellingPoints', v)}
-                  placeholder="例如：高阶智驾(Momenta), 骁龙8295座舱..." 
+                  placeholder="上市时定义的3-5个关键卖点(KSP)。" 
                 />
                 
                 <InputGroup 
-                  label="智能座舱系统" 
+                  label="关键自研技术" 
                   value={formData.cockpitSystem}
                   onChange={(v) => updateForm('cockpitSystem', v)}
-                  placeholder="例如：广汽ADiGO智能座舱" 
+                  placeholder="智能座舱系统" 
                   half 
                 />
                 <InputGroup 
-                  label="智能驾驶系统" 
+                  label="关键供应商技术" 
                   value={formData.smartDrivingSystem}
                   onChange={(v) => updateForm('smartDrivingSystem', v)}
-                  placeholder="例如：Momenta 高阶智驾方案" 
+                  placeholder="智能驾驶系统" 
                   half 
                 />
                 
@@ -267,7 +271,7 @@ export default function App() {
                   label="能源形式约束" 
                   value={formData.energyType}
                   onChange={(v) => updateForm('energyType', v)}
-                  placeholder="PHEV / EREV / EV" 
+                  placeholder="能源类型约束 (PHEV / EREV)。" 
                 />
               </div>
             </div>
@@ -348,19 +352,44 @@ export default function App() {
 
         {/* Step 2: Preview & Edit */}
         {step === Step.PREVIEW && (
-           <div className="bg-white rounded-xl shadow-sm border border-slate-200 h-[calc(100vh-240px)] flex flex-col animate-in fade-in zoom-in-95 duration-300">
+           <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[calc(100vh-240px)] flex flex-col animate-in fade-in zoom-in-95 duration-300">
               <div className="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl flex justify-between items-center">
-                <h2 className="font-semibold text-slate-700 flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  提示词预览
-                </h2>
-                <span className="text-xs text-slate-500 bg-white px-2 py-1 rounded border">可在此处手动修改提示词</span>
+                <div className="flex items-center gap-3">
+                  <h2 className="font-semibold text-slate-700 flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    提示词预览 (Prompt)
+                  </h2>
+                  <span className="text-xs text-slate-500 bg-white px-2 py-1 rounded border">
+                    {isEditingPrompt ? "编辑模式" : "预览模式 (所见即所得)"}
+                  </span>
+                </div>
+                
+                <button 
+                  onClick={() => setIsEditingPrompt(!isEditingPrompt)}
+                  className="text-sm flex items-center gap-2 text-brand-600 hover:text-brand-700 font-medium transition-colors bg-white px-3 py-1.5 rounded border border-brand-200 hover:bg-brand-50"
+                >
+                  {isEditingPrompt ? (
+                    <> <Eye className="w-4 h-4" /> 预览效果 </>
+                  ) : (
+                    <> <Edit3 className="w-4 h-4" /> 编辑提示词 </>
+                  )}
+                </button>
               </div>
-              <textarea 
-                className="flex-1 p-6 font-mono text-sm text-slate-700 resize-none outline-none focus:bg-slate-50 transition-colors leading-relaxed"
-                value={promptText}
-                onChange={(e) => setPromptText(e.target.value)}
-              />
+
+              {isEditingPrompt ? (
+                <textarea 
+                  className="flex-1 p-6 font-mono text-sm text-slate-700 resize-none outline-none focus:bg-slate-50 transition-colors leading-relaxed min-h-[500px]"
+                  value={promptText}
+                  onChange={(e) => setPromptText(e.target.value)}
+                />
+              ) : (
+                <div className="flex-1 p-8 overflow-y-auto bg-white min-h-[500px]">
+                   {/* Using prose for styling markdown, hiding raw syntax. Included remarkGfm for tables */}
+                   <div className="prose prose-slate max-w-none prose-headings:text-slate-800 prose-p:text-slate-600 prose-strong:text-slate-900 prose-table:border-collapse prose-td:border prose-td:border-slate-300 prose-td:p-2 prose-th:border prose-th:border-slate-300 prose-th:bg-slate-100 prose-th:p-2">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{promptText}</ReactMarkdown>
+                   </div>
+                </div>
+              )}
            </div>
         )}
 
@@ -368,12 +397,22 @@ export default function App() {
         {step === Step.RESULT && (
           <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
              <div className="bg-white p-8 md:p-12 rounded-xl shadow-sm border border-slate-200 min-h-[60vh] print-content">
-                <div className="prose prose-slate max-w-none prose-headings:text-slate-800 prose-h1:text-brand-700 prose-strong:text-brand-700">
-                  <ReactMarkdown>{analysisResult}</ReactMarkdown>
+                <div className="prose prose-slate max-w-none prose-headings:text-slate-800 prose-h1:text-brand-700 prose-strong:text-brand-700 prose-table:border-collapse prose-td:border prose-td:border-slate-300 prose-td:p-2 prose-th:border prose-th:border-slate-300 prose-th:bg-slate-100 prose-th:p-2">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysisResult}</ReactMarkdown>
                 </div>
              </div>
           </div>
         )}
+
+        {/* Disclaimer Footer - Moved to Bottom */}
+        <div className="mt-12 mb-4 text-center no-print">
+          <p className="text-[10px] text-slate-400 font-medium tracking-wider">
+            GAC ONLY 商用禁止
+          </p>
+          <p className="text-[10px] text-slate-400 font-medium tracking-wider mt-1">
+             解释权归产品定义雷林焘
+          </p>
+        </div>
 
       </main>
 

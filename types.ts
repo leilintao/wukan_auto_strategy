@@ -63,6 +63,6 @@ export const INITIAL_FORM_DATA: FormData = {
 export const DEFAULT_CONFIG: AIConfig = {
   provider: ServiceProvider.BAILIAN,
   apiKey: '', // User must input
-  modelName: 'qwen-plus', // Good default for Bailian
+  modelName: 'qwen-max', // Updated default to qwen-max
   baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 };
