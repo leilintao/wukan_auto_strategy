@@ -86,7 +86,7 @@ const SettingsModal: React.FC<Props> = ({ isOpen, onClose, config, onSave }) => 
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
             />
             <p className="text-xs text-slate-500 mt-1">
-               推荐: {localConfig.provider === ServiceProvider.BAILIAN ? 'qwen-max (效果最佳) 或 qwen-plus' : 'gemini-2.5-flash'}
+               推荐: {localConfig.provider === ServiceProvider.BAILIAN ? 'qwen3-max (效果最佳) 或 qwen3-plus' : 'gemini-2.5-flash'}
             </p>
           </div>
 

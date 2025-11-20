@@ -11,6 +11,12 @@ export interface AIConfig {
   baseUrl?: string; // For Bailian/Custom
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  reasoning?: string; // Field to store Chain of Thought / Deep Thinking
+}
+
 export interface FormData {
   // Core Product Info
   productName: string;
@@ -63,6 +69,6 @@ export const INITIAL_FORM_DATA: FormData = {
 export const DEFAULT_CONFIG: AIConfig = {
   provider: ServiceProvider.BAILIAN,
   apiKey: '', // User must input
-  modelName: 'qwen-max', // Updated default to qwen-max
+  modelName: 'qwen3-max', // Updated default to qwen3-max
   baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 };

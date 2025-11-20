@@ -68,7 +68,7 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   <strong>Base URL:</strong> 默认为 <code>https://dashscope.aliyuncs.com/compatible-mode/v1</code>
                 </li>
                 <li>
-                  <strong>Model (重要):</strong> 强烈推荐使用 <code>qwen-max</code> 或 <code>qwen-plus</code>。
+                  <strong>Model (重要):</strong> 强烈推荐使用 <code>qwen3-max</code> 或 <code>qwen3-plus</code>。
                   <br/>
                   <span className="text-slate-500 ml-5 text-xs">这些模型在后台默认具备更强的推理能力，无需额外开启“深度思考”开关。</span>
                 </li>

@@ -23,57 +23,93 @@
                 700: '#1d4ed8',
                 900: '#1e3a8a',
               }
-            }
+            },
+            typography: {
+              DEFAULT: {
+                css: {
+                  maxWidth: 'none',
+                  color: '#334155',
+                  h1: { color: '#1e293b', fontWeight: '700' },
+                  h2: { color: '#1e293b', fontWeight: '600', marginTop: '1.5em' },
+                  h3: { color: '#334155', fontWeight: '600' },
+                  strong: { color: '#0f172a', fontWeight: '600' },
+                  table: { width: '100%' },
+                  thead: { backgroundColor: '#f1f5f9' },
+                  'th, td': { padding: '0.75em', border: '1px solid #e2e8f0' },
+                },
+              },
+            },
           },
         },
+        plugins: [
+          function({ addUtilities }) {
+            addUtilities({
+              '.no-scrollbar': {
+                '-ms-overflow-style': 'none',
+                'scrollbar-width': 'none',
+              },
+              '.no-scrollbar::-webkit-scrollbar': {
+                'display': 'none',
+              },
+            })
+          }
+        ]
       }
     </script>
     <style>
+      /* Print Logic: Hide everything, then show only the element with 'print-target' class */
       @media print {
-        /* Hide everything by default */
+        body {
+          background: white;
+        }
         body * {
           visibility: hidden;
         }
-        /* Only show the report content */
-        .print-content, .print-content * {
+        
+        /* The specific bubble user clicked "Print" on */
+        .print-target, .print-target * {
           visibility: visible;
         }
-        /* Reset positioning for print */
-        .print-content {
+        
+        .print-target {
           position: absolute;
           left: 0;
           top: 0;
           width: 100%;
           margin: 0;
-          padding: 20px !important;
+          padding: 0 !important;
           box-shadow: none !important;
           border: none !important;
         }
-        /* Hide headers, footers, buttons explicitly if they leak through */
-        header, footer, .no-print { 
-          display: none !important; 
-        }
-        /* Markdown print styles */
+
+        /* Ensure Markdown looks good on paper */
         .markdown-body { 
           font-size: 11pt; 
           line-height: 1.5;
+          color: black;
         }
+        
+        /* Hide toolbars inside the print target if they leak */
+        .no-print { display: none !important; }
+        
         h1, h2, h3 { page-break-after: avoid; }
         p, table, li { page-break-inside: avoid; }
+        table { border-collapse: collapse !important; width: 100%; }
+        th, td { border: 1px solid #ddd !important; padding: 8px; }
       }
     </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
     "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "remark-gfm": "https://aistudiocdn.com/remark-gfm@^4.0.1",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
     "vite": "https://aistudiocdn.com/vite@^7.2.2",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "remark-gfm": "https://aistudiocdn.com/remark-gfm@^4.0.1"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
