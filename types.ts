@@ -33,14 +33,14 @@ export interface FormData {
   marketSegment: string;
 
   // Competitors (Matrix)
-  comp1: string;
-  comp2: string;
-  priceComp1: string;
-  priceComp2: string;
-  priceOverlap1: string;
-  priceOverlap2: string;
-  highPrice1: string;
-  highPrice2: string;
+  comp1: string; // 定位对标_1
+  comp2: string; // 定位对标_2
+  priceComp1: string; // 价格重叠_1
+  priceComp2: string; // 价格重叠_2
+  priceComp3: string; // 价格重叠_3 (New)
+  priceComp4: string; // 价格重叠_4 (New)
+  highPrice1: string; // 高价位标杆_1
+  highPrice2: string; // 高价位标杆_2
 }
 
 export const INITIAL_FORM_DATA: FormData = {
@@ -60,8 +60,8 @@ export const INITIAL_FORM_DATA: FormData = {
   comp2: '',
   priceComp1: '',
   priceComp2: '',
-  priceOverlap1: '',
-  priceOverlap2: '',
+  priceComp3: '',
+  priceComp4: '',
   highPrice1: '',
   highPrice2: '',
 };
@@ -69,6 +69,6 @@ export const INITIAL_FORM_DATA: FormData = {
 export const DEFAULT_CONFIG: AIConfig = {
   provider: ServiceProvider.BAILIAN,
   apiKey: '', // User must input
-  modelName: 'qwen3-max', // Updated default to qwen3-max
+  modelName: 'qwen3-max',
   baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 };

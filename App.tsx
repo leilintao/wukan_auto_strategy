@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import SettingsModal from './components/SettingsModal';
 import HelpModal from './components/HelpModal';
-import ResearchLog from './components/ResearchLog'; // Import new component
+import ResearchLog from './components/ResearchLog';
 import { FormData, INITIAL_FORM_DATA, AIConfig, DEFAULT_CONFIG, ChatMessage } from './types';
 import { generateStrategyPrompt } from './constants';
 import { streamAnalysis } from './services/aiService';
@@ -15,7 +15,6 @@ enum Step {
   RESULT = 2
 }
 
-// InputGroup Component
 interface InputGroupProps {
   label: string;
   value: string;
@@ -75,7 +74,6 @@ export default function App() {
 
   useEffect(() => {
     if (step === Step.RESULT && isLoading) {
-       // Gentle scroll for better reading experience
        window.scrollBy({ top: 100, behavior: 'smooth' });
     }
   }, [messages, isLoading, step]);
@@ -87,7 +85,6 @@ export default function App() {
     setIsEditingPrompt(false);
   };
 
-  // --- Core Streaming Logic ---
   const runStream = async (historyToUse: ChatMessage[]) => {
     if (!config.apiKey) {
       setIsSettingsOpen(true);
@@ -95,14 +92,12 @@ export default function App() {
       return;
     }
     
-    // Reset Abort Controller
     if (abortControllerRef.current) abortControllerRef.current.abort();
     abortControllerRef.current = new AbortController();
 
     setIsLoading(true);
     setErrorMsg(null);
 
-    // Optimistically add empty assistant message
     setMessages(prev => [...prev, { role: 'assistant', content: '', reasoning: '' }]);
     
     try {
@@ -142,6 +137,25 @@ export default function App() {
     }
   };
 
+  const handleStartAnalysis = async () => {
+    setStep(Step.RESULT);
+    const initialHistory: ChatMessage[] = [{ role: 'user', content: promptText }];
+    setMessages(initialHistory);
+    await runStream(initialHistory);
+  };
+
+  const handleSendMessage = async () => {
+    if (!currentInput.trim() || isLoading) return;
+
+    const newUserMsg: ChatMessage = { role: 'user', content: currentInput };
+    const updatedMessages = [...messages, newUserMsg];
+    
+    setMessages(updatedMessages);
+    setCurrentInput('');
+    
+    await runStream(updatedMessages);
+  };
+
   const handleStop = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -150,43 +164,7 @@ export default function App() {
     }
   };
 
-  const handleExecute = async () => {
-    setStep(Step.RESULT);
-    const initialMsgs: ChatMessage[] = [{ role: 'user', content: promptText }];
-    setMessages([]); 
-    await runStream(initialMsgs);
-  };
-
-  const handleSendMessage = async () => {
-    if (!currentInput.trim() || isLoading) return;
-    
-    const newUserMsg: ChatMessage = { role: 'user', content: currentInput };
-    const newHistory = [...messages, newUserMsg];
-    setMessages(newHistory);
-    setCurrentInput('');
-    
-    const apiMessages: ChatMessage[] = [
-        { role: 'user', content: promptText },
-        ...newHistory
-    ];
-
-    await runStream(apiMessages);
-  };
-
-  // --- Action Handlers ---
-  const handleCopyText = (text: string) => navigator.clipboard.writeText(text);
-
-  const handleDownloadMsgMD = (content: string, index: number) => {
-    const element = document.createElement("a");
-    const file = new Blob([content], {type: 'text/markdown'});
-    element.href = URL.createObjectURL(file);
-    element.download = `Strategy_Report_${index + 1}.md`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const handlePrintMessage = (index: number) => {
+  const handlePrint = (index: number) => {
     setPrintingIndex(index);
     setTimeout(() => {
       window.print();
@@ -194,264 +172,329 @@ export default function App() {
     }, 100);
   };
 
-  const updateForm = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert("已复制内容");
   };
 
+  const handleDownloadMD = (content: string) => {
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `strategy-report-${new Date().toISOString().slice(0,10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const FooterDisclaimer = () => (
+    <div className="w-full py-4 text-center border-t border-slate-200 bg-slate-50/80 backdrop-blur-sm mt-auto no-print">
+      <p className="text-[10px] text-slate-400 font-medium tracking-widest uppercase">
+        GAC ONLY • 商用禁止 • 解释权归产品本部雷林焘
+      </p>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans overflow-x-hidden">
-      
+    <div className="h-full flex flex-col bg-slate-50 font-sans text-slate-900">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30 no-print">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-md text-white">
-              <BarChart3 className="w-6 h-6" />
+            <div className="bg-brand-600 p-2 rounded-lg text-white shadow-lg shadow-brand-500/20">
+              <BarChart3 className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">五看 (WuKan)</h1>
-              <p className="text-xs text-slate-500">汽车产品战略分析 AI 助手</p>
+              <h1 className="font-bold text-lg text-slate-900 leading-none">五看 (WuKan)</h1>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5 tracking-wide">汽车产品战略分析 AI 助手</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setIsHelpOpen(true)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"><HelpCircle className="w-5 h-5" /></button>
-            <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"><Settings className="w-5 h-5" /></button>
+
+          <div className="flex items-center gap-2">
+            <button onClick={() => setIsHelpOpen(true)} className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-full transition-all" title="使用说明">
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-full transition-all" title="设置 API">
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        
+        {/* Progress Stepper */}
+        <div className="max-w-3xl mx-auto px-4 mt-[-1px]">
+          <div className="flex items-center justify-between py-3 text-xs font-medium text-slate-500">
+            <div className={`flex items-center gap-2 ${step >= Step.INPUT ? 'text-brand-600' : ''}`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center ${step >= Step.INPUT ? 'bg-brand-100 text-brand-600' : 'bg-slate-100'}`}>1</div>
+              <span>信息录入</span>
+            </div>
+            <div className="h-px w-12 bg-slate-200" />
+            <div className={`flex items-center gap-2 ${step >= Step.PREVIEW ? 'text-brand-600' : ''}`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center ${step >= Step.PREVIEW ? 'bg-brand-100 text-brand-600' : 'bg-slate-100'}`}>2</div>
+              <span>策略生成</span>
+            </div>
+            <div className="h-px w-12 bg-slate-200" />
+            <div className={`flex items-center gap-2 ${step >= Step.RESULT ? 'text-brand-600' : ''}`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center ${step >= Step.RESULT ? 'bg-brand-100 text-brand-600' : 'bg-slate-100'}`}>3</div>
+              <span>智能分析</span>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Steps Navigation */}
-      {step !== Step.RESULT && (
-        <div className="bg-white border-b border-slate-200 py-4 no-print">
-            <div className="max-w-4xl mx-auto px-4 flex justify-between items-center relative">
-            <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-100 -z-10" />
-            {[
-                { id: Step.INPUT, label: "1. 信息录入" },
-                { id: Step.PREVIEW, label: "2. 策略生成" },
-                { id: Step.RESULT, label: "3. 战略报告" }
-            ].map((s, idx) => (
-                <div key={s.id} className={`flex flex-col items-center gap-2 bg-white px-4 ${step >= s.id ? 'text-brand-600' : 'text-slate-400'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${step >= s.id ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                    {step > s.id ? <Check className="w-5 h-5" /> : idx + 1}
-                    </div>
-                    <span className="text-sm font-medium">{s.label}</span>
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto no-scrollbar">
+        <div className="max-w-5xl mx-auto px-4 py-8 pb-32">
+          
+          {/* Step 1: Input */}
+          {step === Step.INPUT && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:p-8">
+                <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 pb-4 border-b border-slate-100">
+                  <FileText className="w-5 h-5 text-brand-500" />
+                  核心产品与目标定义
+                </h2>
+                <div className="grid grid-cols-2 gap-6">
+                  <InputGroup label="产品名称" value={formData.productName} onChange={v => setFormData({...formData, productName: v})} placeholder="本品的全名（含年款）" />
+                  <InputGroup label="产品类型" value={formData.productType} onChange={v => setFormData({...formData, productType: v})} placeholder="细分市场/定位" />
+                  
+                  <InputGroup label="价格区间" value={formData.priceRange} onChange={v => setFormData({...formData, priceRange: v})} placeholder="官方上市指导价范围" half />
+                  <InputGroup label="实际价格" value={formData.actualPrice} onChange={v => setFormData({...formData, actualPrice: v})} placeholder="当前终端有效/优惠后价格" half />
+                  
+                  <InputGroup label="上市日期" value={formData.launchDate} onChange={v => setFormData({...formData, launchDate: v})} placeholder="市场投放日期" half />
+                  <InputGroup label="数据截止日" value={formData.dataCutoff} onChange={v => setFormData({...formData, dataCutoff: v})} placeholder="本次分析的“当前日期”" half />
+                  
+                  <InputGroup label="销量目标" value={formData.salesTarget} onChange={v => setFormData({...formData, salesTarget: v})} placeholder="期望的月度稳定销量目标" />
+                  <InputGroup label="核心卖点 (KSP)" value={formData.coreSellingPoints} onChange={v => setFormData({...formData, coreSellingPoints: v})} placeholder="上市时定义的3-5个关键卖点" />
+                  
+                  <InputGroup label="关键自研技术" value={formData.cockpitSystem} onChange={v => setFormData({...formData, cockpitSystem: v})} placeholder="智能座舱系统" half />
+                  <InputGroup label="关键供应商技术" value={formData.smartDrivingSystem} onChange={v => setFormData({...formData, smartDrivingSystem: v})} placeholder="智能驾驶系统" half />
+                  
+                  <InputGroup label="能源形式" value={formData.energyType} onChange={v => setFormData({...formData, energyType: v})} placeholder="能源类型约束 (PHEV / EREV)" half />
+                  <InputGroup label="此次分析所关注的价格带" value={formData.marketSegment} onChange={v => setFormData({...formData, marketSegment: v})} placeholder="市场分析所关注的价格范围" half />
                 </div>
-            ))}
-            </div>
-        </div>
-      )}
+              </div>
 
-      {/* Main Content */}
-      <main className={`flex-1 w-full mx-auto ${step === Step.RESULT ? 'max-w-4xl px-4 pb-32' : 'max-w-5xl p-6 mb-24'}`}>
-        
-        {/* Step 1: Input */}
-        {step === Step.INPUT && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <div className="mb-6 pb-4 border-b border-slate-100">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><span className="w-1 h-6 bg-brand-500 rounded-full"></span>核心产品与目标定义</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <InputGroup label="产品名称" value={formData.productName} onChange={(v) => updateForm('productName', v)} placeholder="本品的全名（含年款）。" />
-                <InputGroup label="产品类型/定位" value={formData.productType} onChange={(v) => updateForm('productType', v)} placeholder="细分市场/定位。" half />
-                <InputGroup label="此次分析所关注的价格带" value={formData.marketSegment} onChange={(v) => updateForm('marketSegment', v)} placeholder="此次分析所关注的价格带。" half />
-                <InputGroup label="官方指导价范围" value={formData.priceRange} onChange={(v) => updateForm('priceRange', v)} placeholder="官方上市指导价范围。" half />
-                <InputGroup label="终端有效价格" value={formData.actualPrice} onChange={(v) => updateForm('actualPrice', v)} placeholder="当前终端有效/优惠后价格。" half />
-                <InputGroup label="投放日期" value={formData.launchDate} onChange={(v) => updateForm('launchDate', v)} placeholder="市场投放日期。" half />
-                <InputGroup label="数据截止日期" value={formData.dataCutoff} onChange={(v) => updateForm('dataCutoff', v)} placeholder="本次分析的“当前日期”。" half />
-                <InputGroup label="期望月销量" value={formData.salesTarget} onChange={(v) => updateForm('salesTarget', v)} placeholder="期望的月度稳定销量目标。" />
-                <InputGroup label="核心卖点 (KSP)" value={formData.coreSellingPoints} onChange={(v) => updateForm('coreSellingPoints', v)} placeholder="3-5个关键卖点。" />
-                <InputGroup label="关键自研技术" value={formData.cockpitSystem} onChange={(v) => updateForm('cockpitSystem', v)} placeholder="智能座舱系统" half />
-                <InputGroup label="关键供应商技术" value={formData.smartDrivingSystem} onChange={(v) => updateForm('smartDrivingSystem', v)} placeholder="智能驾驶系统" half />
-                <InputGroup label="能源形式" value={formData.energyType} onChange={(v) => updateForm('energyType', v)} placeholder="PHEV / EREV" />
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <div className="mb-6 pb-4 border-b border-slate-100">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><span className="w-1 h-6 bg-orange-500 rounded-full"></span>竞争矩阵定义</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <InputGroup label="核心对标竞品 1" value={formData.comp1} onChange={(v) => updateForm('comp1', v)} placeholder="例如：理想L6" half />
-                <InputGroup label="核心对标竞品 2" value={formData.comp2} onChange={(v) => updateForm('comp2', v)} placeholder="例如：尚界H5" half />
-                <InputGroup label="价格重叠竞品 1" value={formData.priceComp1} onChange={(v) => updateForm('priceComp1', v)} placeholder="例如：比亚迪唐DM-i" half />
-                <InputGroup label="价格重叠竞品 2" value={formData.priceComp2} onChange={(v) => updateForm('priceComp2', v)} placeholder="例如：零跑C16" half />
-                <InputGroup label="价格重叠竞品 3" value={formData.priceOverlap1} onChange={(v) => updateForm('priceOverlap1', v)} placeholder="例如：启源 Q07" half />
-                <InputGroup label="价格重叠竞品 4" value={formData.priceOverlap2} onChange={(v) => updateForm('priceOverlap2', v)} placeholder="例如：比亚迪宋L DM-i" half />
-                <InputGroup label="高价位标杆 1" value={formData.highPrice1} onChange={(v) => updateForm('highPrice1', v)} placeholder="例如：理想L7" half />
-                <InputGroup label="高价位标杆 2" value={formData.highPrice2} onChange={(v) => updateForm('highPrice2', v)} placeholder="例如：问界M7" half />
-              </div>
-            </div>
-          </div>
-        )}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:p-8">
+                <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 pb-4 border-b border-slate-100">
+                  <BarChart3 className="w-5 h-5 text-brand-500" />
+                  竞争矩阵定义
+                </h2>
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="col-span-2 grid grid-cols-2 gap-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="col-span-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-[-10px]">核心对标 (直接意向/渴望的对手)</p>
+                      <InputGroup label="核心竞品 1" value={formData.comp1} onChange={v => setFormData({...formData, comp1: v})} placeholder="定位对标竞品 1" half />
+                      <InputGroup label="核心竞品 2" value={formData.comp2} onChange={v => setFormData({...formData, comp2: v})} placeholder="定位对标竞品 2" half />
+                   </div>
 
-        {/* Step 2: Preview */}
-        {step === Step.PREVIEW && (
-           <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[calc(100vh-240px)] flex flex-col">
-              <div className="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl flex justify-between items-center">
-                <h2 className="font-semibold text-slate-700 flex items-center gap-2"><FileText className="w-5 h-5" /> 提示词预览</h2>
-                <button onClick={() => setIsEditingPrompt(!isEditingPrompt)} className="text-sm flex items-center gap-2 text-brand-600 bg-white px-3 py-1.5 rounded border border-brand-200 hover:bg-brand-50 transition-colors">
-                  {isEditingPrompt ? <><Eye className="w-4 h-4" /> 预览效果</> : <><Edit3 className="w-4 h-4" /> 编辑提示词</>}
+                   <div className="col-span-2 grid grid-cols-2 gap-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="col-span-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-[-10px]">价格重叠 (同价位区间的核心对手)</p>
+                      <InputGroup label="价格重叠竞品 1" value={formData.priceComp1} onChange={v => setFormData({...formData, priceComp1: v})} placeholder="价格重叠竞品 1" half />
+                      <InputGroup label="价格重叠竞品 2" value={formData.priceComp2} onChange={v => setFormData({...formData, priceComp2: v})} placeholder="价格重叠竞品 2" half />
+                      <InputGroup label="价格重叠竞品 3" value={formData.priceComp3} onChange={v => setFormData({...formData, priceComp3: v})} placeholder="价格重叠竞品 3" half />
+                      <InputGroup label="价格重叠竞品 4" value={formData.priceComp4} onChange={v => setFormData({...formData, priceComp4: v})} placeholder="价格重叠竞品 4" half />
+                   </div>
+
+                   <div className="col-span-2 grid grid-cols-2 gap-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                      <p className="col-span-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-[-10px]">高价位标杆 (价格高于本品但销量高)</p>
+                      <InputGroup label="高价位标杆 1" value={formData.highPrice1} onChange={v => setFormData({...formData, highPrice1: v})} placeholder="高价位标杆 1" half />
+                      <InputGroup label="高价位标杆 2" value={formData.highPrice2} onChange={v => setFormData({...formData, highPrice2: v})} placeholder="高价位标杆 2" half />
+                   </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 pb-8">
+                <button 
+                  onClick={handleToPreview}
+                  className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg shadow-brand-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  下一步：生成策略提示词
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
-              {isEditingPrompt ? (
-                <textarea className="flex-1 p-6 font-mono text-sm resize-none outline-none min-h-[500px]" value={promptText} onChange={(e) => setPromptText(e.target.value)} />
-              ) : (
-                // Removed 'prose-slate' to let custom typography config in index.html take over
-                <div className="flex-1 p-8 overflow-y-auto bg-white min-h-[500px]"><div className="prose max-w-none"><ReactMarkdown remarkPlugins={[remarkGfm]}>{promptText}</ReactMarkdown></div></div>
-              )}
-           </div>
-        )}
+            </div>
+          )}
 
-        {/* Step 3: Chat Interface */}
-        {step === Step.RESULT && (
-          <div className="mt-6 space-y-8 w-full overflow-x-hidden">
-             {messages.map((msg, index) => {
-               const isAssistant = msg.role === 'assistant';
-               const isPrinting = printingIndex === index;
-               const isLast = index === messages.length - 1;
+          {/* Step 2: Preview */}
+          {step === Step.PREVIEW && (
+            <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-180px)]">
+                  <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <h2 className="font-bold text-slate-700 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-brand-500" />
+                      提示词预览 (Prompt)
+                    </h2>
+                    <button 
+                      onClick={() => setIsEditingPrompt(!isEditingPrompt)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-brand-600 bg-white px-3 py-1.5 rounded-md border border-slate-200 hover:border-brand-200 transition-all"
+                    >
+                      {isEditingPrompt ? <Eye className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5" />}
+                      {isEditingPrompt ? '预览渲染' : '编辑提示词'}
+                    </button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white">
+                    {isEditingPrompt ? (
+                      <textarea 
+                        className="w-full h-full p-4 font-mono text-sm text-slate-700 bg-slate-50 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-brand-500/20 resize-none"
+                        value={promptText}
+                        onChange={(e) => setPromptText(e.target.value)}
+                      />
+                    ) : (
+                      <div className="prose max-w-none prose-headings:font-bold prose-h1:text-brand-900 prose-h2:text-sky-600 prose-h2:border-b-2 prose-h2:border-slate-200 prose-h2:pb-2 prose-h3:text-slate-800 prose-table:text-sm prose-th:bg-slate-100 prose-th:text-slate-700 prose-td:text-slate-600 prose-blockquote:bg-brand-50 prose-blockquote:border-l-brand-500 prose-blockquote:text-brand-900 prose-blockquote:not-italic prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{promptText}</ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
 
-               return (
-                 <div key={index} className={`flex gap-4 md:gap-5 ${isPrinting ? 'print-target' : ''} group w-full max-w-full`}>
-                   {isAssistant && (
-                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center flex-shrink-0 mt-1 no-print shadow-sm">
-                       <Sparkles className="text-white w-4 h-4" />
-                     </div>
-                   )}
-                   
-                   {/* Message Content Container - Critical max-w-full and overflow handling */}
-                   <div className={`flex flex-col min-w-0 max-w-full ${isAssistant ? 'flex-1' : 'ml-auto max-w-[85%]'}`}>
-                      {/* User Message Style */}
-                      {!isAssistant && (
-                        <div className="bg-slate-100 text-slate-800 px-5 py-3.5 rounded-2xl rounded-tr-md self-end shadow-sm break-words max-w-full">
-                           <p className="leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+                  <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                     <button 
+                      onClick={() => setStep(Step.INPUT)}
+                      className="text-slate-500 hover:text-slate-800 font-medium text-sm px-4"
+                    >
+                      返回修改
+                    </button>
+                    <button 
+                      onClick={handleStartAnalysis}
+                      className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-semibold shadow-lg shadow-brand-500/20 transition-all hover:scale-[1.02]"
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      提交分析 (Deep Research)
+                    </button>
+                  </div>
+               </div>
+            </div>
+          )}
+
+          {/* Step 3: Result (Chat Interface) */}
+          {step === Step.RESULT && (
+            <div className="max-w-4xl mx-auto space-y-8 pb-24">
+               {messages.map((msg, idx) => {
+                 if (msg.role === 'system') return null;
+                 const isUser = msg.role === 'user';
+                 
+                 return (
+                   <div 
+                    key={idx} 
+                    className={`group relative flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full print-target`}
+                   > 
+                      {/* Deep Thinking Log (Only for Assistant) */}
+                      {!isUser && msg.reasoning && (
+                        <div className="w-full mb-2 px-1">
+                          <ResearchLog content={msg.reasoning} isActive={isLoading && idx === messages.length - 1} />
                         </div>
                       )}
 
-                      {/* Assistant Message Style */}
-                      {isAssistant && (
-                        <div className="space-y-4 w-full min-w-0 max-w-full">
-                           {/* Deep Research Accordion */}
-                           {msg.reasoning && (
-                             <div className="no-print w-full max-w-full">
-                                <ResearchLog content={msg.reasoning} isActive={isLoading && isLast} />
-                             </div>
-                           )}
-
-                           {/* Main Content */}
-                           {/* Removed 'prose-slate' to allow custom index.html typography styles (blue headings etc) to work */}
-                           <div className="prose max-w-none leading-7 text-slate-700 w-full">
-                              {/* Wrap in a div that handles overflow for tables/code blocks */}
-                              <div className="break-words w-full overflow-x-auto">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                              </div>
+                      {/* Message Bubble */}
+                      <div className={`
+                        relative px-6 py-5 text-[15px] leading-relaxed w-full max-w-full
+                        ${isUser 
+                          ? 'bg-brand-600 text-white rounded-2xl rounded-tr-sm shadow-md ml-auto w-fit' 
+                          : 'bg-white text-slate-800 rounded-2xl shadow-sm border border-slate-100 w-full'
+                        }
+                      `}>
+                         {isUser ? (
+                           <div className="whitespace-pre-wrap">{msg.content}</div>
+                         ) : (
+                           <div className="prose max-w-none prose-headings:font-bold prose-h1:text-brand-900 prose-h2:text-sky-600 prose-h2:border-b-2 prose-h2:border-slate-200 prose-h2:pb-2 prose-h3:text-slate-800 prose-table:text-sm prose-th:bg-slate-100 prose-th:text-slate-700 prose-td:text-slate-600 prose-blockquote:bg-brand-50 prose-blockquote:border-l-brand-500 prose-blockquote:text-brand-900 prose-blockquote:not-italic prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline overflow-x-auto">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                            </div>
-                           
-                           {/* Loading State */}
-                           {isLoading && isLast && !msg.content && !msg.reasoning && (
-                              <div className="flex items-center gap-2 text-slate-400 py-4">
-                                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                              </div>
-                           )}
+                         )}
+                      </div>
 
-                           {/* Message Actions */}
-                           {!isLoading && (
-                            <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity pt-2 no-print">
-                              <button onClick={() => handleCopyText(msg.content)} className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-brand-600 transition-colors">
-                                <Copy className="w-3.5 h-3.5" /> 复制
-                              </button>
-                              <button onClick={() => handleDownloadMsgMD(msg.content, index)} className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-brand-600 transition-colors">
-                                <Download className="w-3.5 h-3.5" /> 下载MD
-                              </button>
-                              <button onClick={() => handlePrintMessage(index)} className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-brand-600 transition-colors">
-                                <Printer className="w-3.5 h-3.5" /> 导出PDF
-                              </button>
-                            </div>
-                           )}
+                      {/* Action Bar (Only for Assistant) */}
+                      {!isUser && !isLoading && (msg.content.length > 0) && (
+                        <div className="flex items-center gap-2 mt-2 ml-2 opacity-0 group-hover:opacity-100 transition-opacity no-print">
+                          <button onClick={() => handleCopy(msg.content)} className="p-1.5 text-slate-400 hover:text-brand-600 rounded hover:bg-slate-100 transition-colors" title="复制">
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDownloadMD(msg.content)} className="p-1.5 text-slate-400 hover:text-brand-600 rounded hover:bg-slate-100 transition-colors" title="下载 Markdown">
+                            <Download className="w-4 h-4" />
+                          </button>
+                           <button onClick={() => handlePrint(idx)} className="p-1.5 text-slate-400 hover:text-brand-600 rounded hover:bg-slate-100 transition-colors" title="导出 PDF">
+                            <Printer className="w-4 h-4" />
+                          </button>
                         </div>
                       )}
                    </div>
-                 </div>
-               );
-             })}
-             <div ref={chatEndRef} />
-             
-             {/* Floating Input Bar */}
-             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl px-4 z-50 no-print">
-               <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 flex items-end gap-2 p-2 pr-3 transition-shadow hover:shadow-xl ring-1 ring-slate-100">
-                  <textarea 
-                    value={currentInput}
-                    onChange={(e) => setCurrentInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    placeholder={isLoading ? "AI 正在分析中..." : "输入问题以继续追问..."}
-                    disabled={isLoading}
-                    rows={1}
-                    className="flex-1 outline-none text-slate-700 bg-transparent py-3 px-4 max-h-32 min-h-[48px] resize-none"
-                    style={{ height: 'auto' }}
-                    onInput={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = `${target.scrollHeight}px`;
-                    }}
-                  />
-                  
-                  <div className="pb-1.5">
-                    {isLoading ? (
-                      <button 
-                        onClick={handleStop} 
-                        className="p-2 rounded-xl bg-slate-100 text-red-500 hover:bg-red-50 transition-all"
-                        title="停止生成"
-                      >
-                        <StopCircle className="w-5 h-5 fill-current" />
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={handleSendMessage} 
-                        disabled={!currentInput.trim()} 
-                        className="p-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:bg-slate-100 disabled:text-slate-300 transition-all shadow-sm"
-                      >
-                        <Send className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-               </div>
-               <div className="text-center mt-2">
-                 <p className="text-[10px] text-slate-400 font-medium tracking-wider">GAC ONLY • 商用禁止 • 解释权归产品本部雷林焘</p>
-               </div>
-             </div>
-          </div>
-        )}
+                 );
+               })}
 
+               {/* Loading Indicator (If waiting for start) */}
+               {isLoading && messages.length === 0 && (
+                 <div className="flex justify-center py-12">
+                    <div className="flex flex-col items-center gap-3 animate-pulse">
+                      <div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+                      <span className="text-sm font-medium text-slate-400">AI 正在分析中...</span>
+                    </div>
+                 </div>
+               )}
+
+               {/* Error Message */}
+               {errorMsg && (
+                 <div className="p-4 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm text-center">
+                   {errorMsg}
+                 </div>
+               )}
+               
+               <div ref={chatEndRef} className="h-4" />
+            </div>
+          )}
+        </div>
       </main>
 
-      {/* Footer Controls (Steps 0 & 1 only) */}
-      {step < Step.RESULT && (
-        <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 z-40 no-print">
-          <div className="max-w-5xl mx-auto flex flex-col gap-2">
-            <div className="flex justify-between items-center w-full">
-              <div className="flex items-center gap-4">
-                {step > Step.INPUT && <button onClick={() => setStep(step - 1)} className="text-slate-500 hover:text-slate-800 font-medium px-4 py-2">上一步</button>}
-              </div>
-              <div className="flex items-center gap-3">
-                {step === Step.INPUT && <button onClick={handleToPreview} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-brand-200 transition-all hover:shadow-brand-300">生成提示词 <ChevronRight className="w-4 h-4" /></button>}
-                {step === Step.PREVIEW && <button onClick={handleExecute} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-brand-200 transition-all hover:shadow-brand-300"><Play className="w-4 h-4" /> 提交 AI 分析</button>}
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] text-slate-400 font-medium tracking-wider">GAC ONLY • 商用禁止 • 解释权归产品本部雷林焘</p>
-            </div>
-          </div>
-        </footer>
+      {/* Chat Input Bar (Only in Result Step) */}
+      {step === Step.RESULT && (
+        <div className="fixed bottom-6 left-0 right-0 px-4 flex justify-center z-40 no-print">
+           <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-slate-200 p-2 flex items-end gap-2 transition-all focus-within:ring-2 focus-within:ring-brand-500/20">
+              <textarea
+                value={currentInput}
+                onChange={(e) => setCurrentInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if(e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="对当前结果有疑问？继续追问 AI..."
+                className="flex-1 max-h-32 min-h-[44px] py-2.5 px-4 bg-transparent outline-none text-sm text-slate-800 resize-none custom-scrollbar"
+                rows={1}
+              />
+              {isLoading ? (
+                <button 
+                  onClick={handleStop}
+                  className="p-2.5 mb-0.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all flex items-center gap-1.5 pr-3"
+                >
+                  <StopCircle className="w-5 h-5" />
+                  <span className="text-xs font-bold">停止</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSendMessage}
+                  disabled={!currentInput.trim()}
+                  className="p-2.5 mb-0.5 bg-brand-600 text-white hover:bg-brand-700 disabled:bg-slate-200 disabled:text-slate-400 rounded-xl transition-all shadow-sm disabled:shadow-none"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              )}
+           </div>
+        </div>
       )}
 
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} config={config} onSave={setConfig} />
-      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)}
+        config={config}
+        onSave={setConfig}
+      />
+
+      <HelpModal 
+        isOpen={isHelpOpen} 
+        onClose={() => setIsHelpOpen(false)}
+      />
+      
+      <FooterDisclaimer />
     </div>
   );
 }
