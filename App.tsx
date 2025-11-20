@@ -252,9 +252,9 @@ export default function App() {
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><span className="w-1 h-6 bg-brand-500 rounded-full"></span>核心产品与目标定义</h2>
               </div>
               <div className="grid grid-cols-2 gap-6">
-                <InputGroup label="产品名称 (含年款)" value={formData.productName} onChange={(v) => updateForm('productName', v)} placeholder="本品的全名（含年款）。" />
+                <InputGroup label="产品名称" value={formData.productName} onChange={(v) => updateForm('productName', v)} placeholder="本品的全名（含年款）。" />
                 <InputGroup label="产品类型/定位" value={formData.productType} onChange={(v) => updateForm('productType', v)} placeholder="细分市场/定位。" half />
-                <InputGroup label="市场价格区间" value={formData.marketSegment} onChange={(v) => updateForm('marketSegment', v)} placeholder="市场分析所关注的价格范围。" half />
+                <InputGroup label="市场价格区间" value={formData.marketSegment} onChange={(v) => updateForm('marketSegment', v)} placeholder="此次分析所关注的价格带。" half />
                 <InputGroup label="官方指导价范围" value={formData.priceRange} onChange={(v) => updateForm('priceRange', v)} placeholder="官方上市指导价范围。" half />
                 <InputGroup label="终端有效价格" value={formData.actualPrice} onChange={(v) => updateForm('actualPrice', v)} placeholder="当前终端有效/优惠后价格。" half />
                 <InputGroup label="投放日期" value={formData.launchDate} onChange={(v) => updateForm('launchDate', v)} placeholder="市场投放日期。" half />
@@ -420,7 +420,7 @@ export default function App() {
                   </div>
                </div>
                <div className="text-center mt-2">
-                 <p className="text-[10px] text-slate-400 font-medium tracking-wider">GAC ONLY 商用禁止 • 解释权归产品定义雷林焘</p>
+                 <p className="text-[10px] text-slate-400 font-medium tracking-wider">GAC ONLY • 商用禁止 • 解释权归产品本部雷林焘</p>
                </div>
              </div>
           </div>
@@ -431,13 +431,18 @@ export default function App() {
       {/* Footer Controls (Steps 0 & 1 only) */}
       {step < Step.RESULT && (
         <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 z-40 no-print">
-          <div className="max-w-5xl mx-auto flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              {step > Step.INPUT && <button onClick={() => setStep(step - 1)} className="text-slate-500 hover:text-slate-800 font-medium px-4 py-2">上一步</button>}
+          <div className="max-w-5xl mx-auto flex flex-col gap-2">
+            <div className="flex justify-between items-center w-full">
+              <div className="flex items-center gap-4">
+                {step > Step.INPUT && <button onClick={() => setStep(step - 1)} className="text-slate-500 hover:text-slate-800 font-medium px-4 py-2">上一步</button>}
+              </div>
+              <div className="flex items-center gap-3">
+                {step === Step.INPUT && <button onClick={handleToPreview} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-brand-200 transition-all hover:shadow-brand-300">生成提示词 <ChevronRight className="w-4 h-4" /></button>}
+                {step === Step.PREVIEW && <button onClick={handleExecute} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-brand-200 transition-all hover:shadow-brand-300"><Play className="w-4 h-4" /> 提交 AI 分析</button>}
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              {step === Step.INPUT && <button onClick={handleToPreview} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-brand-200 transition-all hover:shadow-brand-300">生成提示词 <ChevronRight className="w-4 h-4" /></button>}
-              {step === Step.PREVIEW && <button onClick={handleExecute} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-brand-200 transition-all hover:shadow-brand-300"><Play className="w-4 h-4" /> 提交 AI 分析</button>}
+            <div className="text-center">
+              <p className="text-[10px] text-slate-400 font-medium tracking-wider">GAC ONLY • 商用禁止 • 解释权归产品本部雷林焘</p>
             </div>
           </div>
         </footer>
