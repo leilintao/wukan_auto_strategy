@@ -254,7 +254,7 @@ export default function App() {
               <div className="grid grid-cols-2 gap-6">
                 <InputGroup label="产品名称" value={formData.productName} onChange={(v) => updateForm('productName', v)} placeholder="本品的全名（含年款）。" />
                 <InputGroup label="产品类型/定位" value={formData.productType} onChange={(v) => updateForm('productType', v)} placeholder="细分市场/定位。" half />
-                <InputGroup label="市场价格区间" value={formData.marketSegment} onChange={(v) => updateForm('marketSegment', v)} placeholder="此次分析所关注的价格带。" half />
+                <InputGroup label="此次分析所关注的价格带" value={formData.marketSegment} onChange={(v) => updateForm('marketSegment', v)} placeholder="此次分析所关注的价格带。" half />
                 <InputGroup label="官方指导价范围" value={formData.priceRange} onChange={(v) => updateForm('priceRange', v)} placeholder="官方上市指导价范围。" half />
                 <InputGroup label="终端有效价格" value={formData.actualPrice} onChange={(v) => updateForm('actualPrice', v)} placeholder="当前终端有效/优惠后价格。" half />
                 <InputGroup label="投放日期" value={formData.launchDate} onChange={(v) => updateForm('launchDate', v)} placeholder="市场投放日期。" half />
@@ -296,7 +296,8 @@ export default function App() {
               {isEditingPrompt ? (
                 <textarea className="flex-1 p-6 font-mono text-sm resize-none outline-none min-h-[500px]" value={promptText} onChange={(e) => setPromptText(e.target.value)} />
               ) : (
-                <div className="flex-1 p-8 overflow-y-auto bg-white min-h-[500px]"><div className="prose prose-slate max-w-none"><ReactMarkdown remarkPlugins={[remarkGfm]}>{promptText}</ReactMarkdown></div></div>
+                // Removed 'prose-slate' to let custom typography config in index.html take over
+                <div className="flex-1 p-8 overflow-y-auto bg-white min-h-[500px]"><div className="prose max-w-none"><ReactMarkdown remarkPlugins={[remarkGfm]}>{promptText}</ReactMarkdown></div></div>
               )}
            </div>
         )}
@@ -337,7 +338,8 @@ export default function App() {
                            )}
 
                            {/* Main Content */}
-                           <div className="prose prose-slate max-w-none leading-7 text-slate-700 w-full">
+                           {/* Removed 'prose-slate' to allow custom index.html typography styles (blue headings etc) to work */}
+                           <div className="prose max-w-none leading-7 text-slate-700 w-full">
                               {/* Wrap in a div that handles overflow for tables/code blocks */}
                               <div className="break-words w-full overflow-x-auto">
                                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
