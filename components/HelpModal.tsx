@@ -45,7 +45,7 @@ const HelpModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center flex-shrink-0 font-bold">3</div>
                 <div>
                   <p className="font-medium text-slate-900">报告生成与交付</p>
-                  <p className="text-sm">AI 生成报告后，点击底部的 <span className="font-bold text-slate-800">"导出 PDF"</span> 按钮。系统会生成一份排版整洁的文档，可直接发送给管理层或同事。</p>
+                  <p className="text-sm">AI 生成报告后，点击底部的 <span className="font-bold text-slate-800">"导出 PDF"</span> 按钮。系统会生成一份排版整洁的 PDF文档，可将研究结果下载到本地，也可复制或下载 markdown 到本地编辑。</p>
                 </div>
               </div>
             </div>
